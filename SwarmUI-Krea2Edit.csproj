@@ -1,0 +1,81 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <AssemblyName>SwarmUI-Krea2Edit</AssemblyName>
+    <TargetFramework>net8.0</TargetFramework>
+  </PropertyGroup>
+
+  <Import Project="../../SwarmUI.extension.props" />
+
+  <ItemGroup Condition="'$(DesignTimeBuild)' == 'true' and Exists('../../SwarmUI.csproj')">
+    <Reference Remove="SwarmUI" />
+    <ProjectReference Include="../../SwarmUI.csproj">
+      <Private>false</Private>
+      <Properties>_EnableMacOSCodeSign=false</Properties>
+    </ProjectReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="ComfyTyped">
+      <HintPath>lib/ComfyTyped.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="bin/**/*.cs" />
+    <Compile Remove="obj/**/*.cs" />
+    <Compile Remove="Tests/**/*.cs" />
+  </ItemGroup>
+
+  <!--
+       ComfyTyped code generation.
+         dotnet build -t:GenerateComfyTyped -p:ComfyJson=http://127.0.0.1:8188/object_info
+
+       Prerequisites:
+         - ComfyTyped repo cloned (https://github.com/jtreminio/ComfyTyped)
+         - A running ComfyUI server with comfyui-krea2edit installed
+
+       Optional overrides:
+         -p:ComfyTypedPath=C:/path/to/ComfyTyped
+         -p:ComfyJson=object_info.json  (local file instead of URL)
+  -->
+  <Target Name="GenerateComfyTyped"
+          Condition="'$(ComfyJson)' != ''">
+
+    <PropertyGroup>
+      <ComfyTypedPath Condition="'$(ComfyTypedPath)' == ''">../../ComfyTyped</ComfyTypedPath>
+      <CodeGenArgs>--comfy-json $(ComfyJson)</CodeGenArgs>
+      <CodeGenArgs>$(CodeGenArgs) --output $(MSBuildProjectDirectory)/src/Generated</CodeGenArgs>
+      <CodeGenArgs>$(CodeGenArgs) --namespace Krea2Edit.Generated</CodeGenArgs>
+      <CodeGenArgs>$(CodeGenArgs) --core-assembly $(MSBuildProjectDirectory)/lib/ComfyTyped.dll</CodeGenArgs>
+      <CodeGenArgs>$(CodeGenArgs) --keep-list $(MSBuildProjectDirectory)/comfytyped.keep.json</CodeGenArgs>
+    </PropertyGroup>
+
+    <Error Text="ComfyTyped repo not found at $(ComfyTypedPath). Clone it from https://github.com/jtreminio/ComfyTyped"
+           Condition="!Exists('$(ComfyTypedPath)/tools/ComfyTyped.CodeGen')" />
+
+    <Exec Command="dotnet run --project &quot;$(ComfyTypedPath)/tools/ComfyTyped.CodeGen&quot; -- $(CodeGenArgs)" />
+  </Target>
+
+  <!--
+       ComfyTyped code generation cleanup.
+         dotnet build -t:PruneComfyTyped
+
+       Optional overrides:
+         -p:ComfyTypedPath=C:/path/to/ComfyTyped
+  -->
+  <Target Name="PruneComfyTyped" >
+
+    <PropertyGroup>
+      <ComfyTypedPath Condition="'$(ComfyTypedPath)' == ''">../../ComfyTyped</ComfyTypedPath>
+      <CodeGenArgs>$(CodeGenArgs) --generated-dir $(MSBuildProjectDirectory)/src/Generated</CodeGenArgs>
+      <CodeGenArgs>$(CodeGenArgs) --source $(MSBuildProjectDirectory)/src</CodeGenArgs>
+    </PropertyGroup>
+
+    <Error Text="ComfyTyped repo not found at $(ComfyTypedPath). Clone it from https://github.com/jtreminio/ComfyTyped"
+           Condition="!Exists('$(ComfyTypedPath)/tools/ComfyTyped.CodeGen')" />
+
+    <Exec Command="dotnet run --project &quot;$(ComfyTypedPath)/tools/ComfyTyped.CodeGen&quot; -- prune $(CodeGenArgs)" />
+  </Target>
+
+</Project>
