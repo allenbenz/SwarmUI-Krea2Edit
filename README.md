@@ -31,11 +31,9 @@ edit-patched.
 
 ## Dependencies
 
-- **comfyui-krea2edit** (required) - the model patch + grounded-encode
-  template. Install via the button in the parameter group.
-- **ComfyUI_essentials** (required for Grounding Px) - provides `ImageResize+`
-  for VLM image scaling. Install via the button in the parameter group.
-  Set Grounding Px to 0 to skip this dependency.
+- **comfyui-krea2edit** (required) - the model patch node. Install via the
+  button in the parameter group. The grounding-px scaler ships with this
+  extension (no extra install needed).
 
 ## Parameters
 
@@ -57,9 +55,8 @@ extension is off for that generation. Turn it on, then:
 
 ## Usage
 
-1. Install the **comfyui-krea2edit** and **ComfyUI_essentials** node packs using
-   the buttons in the **Krea 2 Edit** parameter group, then restart the ComfyUI
-   backend when prompted.
+1. Install the **comfyui-krea2edit** node pack using the button in the **Krea 2
+   Edit** parameter group, then restart the ComfyUI backend when prompted.
 2. Select a Krea 2 model and load the Krea 2 Identity Edit LoRA (`@1.0` strength).
 3. Add at least one prompt image (the source to edit). Optionally add a second
    image for two-input edits.

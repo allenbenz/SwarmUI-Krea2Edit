@@ -1,3 +1,4 @@
+using System.IO;
 using ComfyTyped.Core;
 using ComfyTyped.Generated;
 using ComfyTyped.SwarmUI;
@@ -13,9 +14,8 @@ namespace Krea2Edit;
 public class Krea2Edit : Extension
 {
     public const string EditFeatureFlag = "krea2_identity_edit";
-    public const string EssentialsFeatureFlag = "comfyui_essentials";
     public const string EditModelPatchNodeName = "Krea2EditModelPatch";
-    public const string EssentialsResizeNodeName = "ImageResize+";
+    public const string GroundingPxNodeName = "Krea2EditGroundingPx";
 
     // v1.2 defaults to "fit"; "crop (legacy)" is the v1/v1.1 center-crop-then-resize
     // geometry for use with older weights.
@@ -43,18 +43,13 @@ public class Krea2Edit : Extension
         ComfyTyped.Generated.NodeRegistrations.EnsureRegistered();
         Generated.NodeRegistrations.EnsureRegistered();
         ComfyUIBackendExtension.NodeToFeatureMap[EditModelPatchNodeName] = EditFeatureFlag;
-        ComfyUIBackendExtension.NodeToFeatureMap[EssentialsResizeNodeName] = EssentialsFeatureFlag;
+        ComfyUIBackendExtension.NodeToFeatureMap[GroundingPxNodeName] = EditFeatureFlag;
+        ComfyUISelfStartBackend.CustomNodePaths.Add(Path.GetFullPath(Path.Combine(FilePath, "ExtraNodes/krea2edit_nodes")));
         InstallableFeatures.RegisterInstallableFeature(new(
             "Krea 2 Identity Edit",
             EditFeatureFlag,
             "https://github.com/lbouaraba/comfyui-krea2edit",
             "lbouaraba"
-        ));
-        InstallableFeatures.RegisterInstallableFeature(new(
-            "ComfyUI Essentials",
-            EssentialsFeatureFlag,
-            "https://github.com/cubiq/ComfyUI_essentials",
-            "matteo"
         ));
         ScriptFiles.Add("assets/krea2edit_install.js");
 
@@ -238,21 +233,14 @@ public class Krea2Edit : Extension
         generator.CurrentModel = patch.MODEL.ToWGNodeData(generator, WGNodeData.DT_MODEL);
     }
 
-    /// <summary>Scale for VLM input via ComfyUI_essentials ImageResize+.
-    /// method="keep proportion" + condition="downscale if bigger" + interpolation="area"
-    /// with width=height=grounding_px caps the longest side at grounding_px, only
-    /// downscaling.</summary>
+    /// <summary>Scale for VLM input via the bundled Krea2EditGroundingPx node.
+    /// Caps the longest side at grounding_px, only downscaling.</summary>
     private static JArray ScaleForGrounding(WorkflowGenerator generator, JArray image, int groundingPx)
     {
-        string nodeId = generator.CreateNode(EssentialsResizeNodeName, new JObject()
+        string nodeId = generator.CreateNode(GroundingPxNodeName, new JObject()
         {
             ["image"] = image,
-            ["width"] = groundingPx,
-            ["height"] = groundingPx,
-            ["interpolation"] = "area",
-            ["method"] = "keep proportion",
-            ["condition"] = "downscale if bigger",
-            ["multiple_of"] = 0
+            ["grounding_px"] = groundingPx
         });
         return [nodeId, 0];
     }
